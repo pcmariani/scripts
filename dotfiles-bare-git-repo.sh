@@ -15,12 +15,12 @@ fi
 
 dot checkout 2>/dev/null
 if [ $? = 0 ]; then
-    echo "Checked out config."
+    echo "Dotfiles checked out."
 else
-    echo "Backing up pre-existing dot files."
-
     backupdir=.dotrepo-backup
-    filepaths="$(dot checkout 2>&1 | egrep "\s+\." | awk {'print $1'})"  #| xargs -I{} mv {} .dotrepo-backup/{}
+    echo "Backing up pre-existing dot files to $backupdir."
+
+    filepaths="$(dot checkout 2>&1 | egrep "\s+\." | awk {'print $1'})"
 
     for filepath in $filepaths; do
 	mkdir -p "$backupdir/${filepath%/*}"
@@ -29,4 +29,11 @@ else
 fi
 
 dot checkout
-dot config status.showUntrackedFiles no
+if [ $? = 0 ]; then
+    echo "Dotfiles checked out."
+    dot config status.showUntrackedFiles no
+    echo "Success!"
+else
+    echo "Aborting."
+fi
+

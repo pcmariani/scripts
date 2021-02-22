@@ -1,0 +1,2 @@
+# prints a graph of your history
+history | tr -s ' ' | cut -d ' ' -f3 | sort | uniq -c | sort -nr | head | awk '{ printf "%-25s %-4d", $2, $1, n = $1 / 5; s = sprintf("%*.s", n, ""); gsub(/ /, "◼", s); print s }'

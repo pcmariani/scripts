@@ -1,0 +1,8 @@
+echo -e $(curl -H "$ESVAPIKEY" "https://api.esv.org/v3/passage/text/?q=John+11&include-passage-references=false&include-footnotes=false&include-verse-numbers=false&indent-using=tab&indent-paragraphs=1" | jq ".passages[0]" | sed -e 's/^"/## */' -e 's/\\n\\n\([^\\t]\)/\\n\\n## *\1/g' -e 's/\\n\\n\\t/*&/g' -e 's/"$//' -e 's/\\t//g') | pandoc -t html | lynx -stdi
+
+echo -e $(curl -H "$ESVAPIKEY" "https://api.esv.org/v3/passage/text/?q=$ESVREF&include-passage-references=false&include-footnotes=true&include-verse-numbers=false&indent-using=space&indent-paragraphs=2" | jq '.canonical + "\n\n" + .passages[0]' | sed -e 's/  /\\x20\\x20/g' -e 's/^"/# /' -e 's/(ESV)"//' -e 's/\[\|\]/*/g'| perl -pe 's/\\n\\n([A-Z-a-z].*?\\n\\n\\x20\\x20)/\\n\\n## \1/g') | pandoc -t html |  sed -e 's|<h2\(.*\)>\(.*\)</h2>|<h2\1><strong>\2</strong></h2>|' -e 's/<code>//g' -e 's|</code>||g' -e 's|<p>Footnotes</p>|<h2><sub>Footnotes</sub></h2>|' | lynx -stdin
+
+Authorization: Token 8e789f99f1cf3e9d1312851d994345cbb46b7130
+
+echo -e $(curl -H "$ESVAPIKEY" "https://api.esv.org/v3/passage/text/?q=$ESVREF&include-passage-references=false&include-footnotes=true&include-verse-numbers=true&indent-using=space&indent-paragraphs=2" | jq '.canonical + "\n\n" + .passages[0]' | sed -e 's/  /\\x20\\x20/g' -e 's/^"/# /' -e 's/(ESV)"//' -e 's/\[\|\]/*/g' -e 's/(\([0-9]\))/^\1^/g' | perl -pe 's/\\n\\n([A-Z-a-z].*?\\n\\n\\x20\\x20)/\\n\\n## \1/g') | pandoc -t html |  sed -e 's|<h2\(.*\)>\(.*\)</h2>|<h2\1><strong>\2</strong></h2>|' -e 's/<code>/\n\n\n      /g' -e 's|</code>|\n\n\n|g' -e 's|<p>Footnotes</p>|<h2><sub>Footnotes</sub></h2>|' -e 's|^[^<\/?]|      &|' | lynx -stdin
+

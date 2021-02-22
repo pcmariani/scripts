@@ -1,0 +1,133 @@
+#!/usr/bin/env bash
+# CHECK 1
+
+file=$HOME/notes.mkd
+
+last5notes=()
+notedisplay=()
+note=()
+
+IFS=$'\n'
+
+# Add date if a new day
+nowdate="$(date +%s)"
+nowday="$(date +%d)"
+lastdayraw="$(grep '[0-9]\{2\}-[A-Za-z]\{3\}-[0-9]\{4\}' $file | tail -n1)"
+lastday="$(date -d $lastdayraw +%d)"
+if [ "$(( $nowday - $lastday ))" -gt 0 ]
+then
+    note+=("$(date +'%d-%b-%Y')")
+    note+=("-----------")
+fi
+
+promptcolor='\e[1;40;31m' #lightred
+tagscolor='\e[2;40;36m' #cyan
+epochcolor='\e[5;40;90m' #grey
+normalcolor='\e[0m' #normal white
+
+clear
+# Read multiline note input, if empty line break
+userinputloop() {
+printf "$promptcolor%s$normalcolor" "note > "
+read input
+
+if [[ "$input" =~ ^\..* ]]
+then
+    case "$input" in
+        .q) exit 0
+            ;;
+        .v) clear
+            echo "${last5notes[*]}"
+            userinputloop
+            ;;
+        .c) clear
+            userinputloop
+            ;;
+        *) echo "$input: invalid option"
+            userinputloop
+            ;;
+    esac
+else
+    note+=("$input")
+    while read line
+    do
+        [ -z "$line" ] && break
+        note+=("$line")
+    done
+
+    clear
+    printf "$promptcolor%s$normalcolor" "note > "
+    echo "${note[*]}"
+    printf "$promptcolor%s$tagscolor" "tags > "
+    read tags
+
+    clear
+
+    notedisplay+=("$(printf "$normalcolor%s" "${note[*]}")")
+    notedisplay+=("$(printf "$tagscolor%s" "$(echo $tags | sed 's/\</#/g') ")")
+    # notedisplay+=("$(printf "$epochcolor%s$normalcolor\n\n" "<!--$nowdate-->")")
+    notedisplay+=("")
+    cowthink "${notedisplay[*]}"
+
+    last5notes+=("${notedisplay[*]}")
+    unset notedisplay
+    # printf "$epochcolor%s$normalcolor\n" "<!--$nowdate-->"
+
+
+    # echo
+    note+=("$(echo $tags | sed 's/\</#/g') <!--$nowdate-->")
+    note+=("")
+
+    # Echo array to file with newline delimiter
+    echo "${note[*]}" >> "$file"
+    # last5notes+="${note[*]}"
+
+    unset note
+    userinputloop
+fi
+}
+userinputloop
+
+# case "$command" in 
+
+# n) clear
+#     printf '\e[31m%s\e[0m' "note > "
+#     while read line
+#     do
+#         [ -z "$line" ] && break
+#         note+=("$line")
+#     done
+
+#     # Read tag input, add # to beginning of tags, add epoch datestamp, add blank line
+#     # echo "tags..."
+#     clear
+#     # printf '\e[31m%s\n' "$status"
+#     printf '\e[31m%s\e[0m' "note > "
+#     echo "${note[*]}"
+#     printf '\e[31m%s\e[36m' "tags > "
+#     read tags
+#     # read -p "\`" tags
+
+#     clear
+#     printf '\e[0m%s\n' "${note[*]}"
+#     printf '\e[36m%s\e[0m\n' "$(echo $tags | sed 's/\</#/g')"
+#     # "$tags" | sed 's/\</#/g'
+#     echo
+#     note+=("\`$(echo $tags | sed 's/\</#/g')\` <!--$nowdate-->")
+#     note+=("")
+
+#     # Echo array to file with newline delimiter
+#     echo "${note[*]}" >> "$file"
+
+#     # echo "...noted"
+#     unset note
+#     userinputloop
+#     ;;
+# q) exit 0
+#     ;;
+# *) echo "$command: invalid option"
+#     userinputloop
+#     ;;
+# esac
+# }
+

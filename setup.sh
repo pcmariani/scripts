@@ -1,67 +1,79 @@
 #!/bin/sh
 
-red="$(tput setaf 1)"
-green="$(tput setaf 2)"
-yellow="$(tput setaf 3)"
-blue="$(tput setaf 4)"
-magenta="$(tput setaf 5)"
-cyan="$(tput setaf 6)"
-white="$(tput bold)$(tput setaf 255)"
-orange="$(tput setaf 180)"
-grey="$(tput setaf 253)"
-normal=$(tput sgr0)
+logging=
 
-reset="$(tput sgr0)"$grey
-title=$green
-question=$cyan
-answer=$white
-good=$green
-bad=$red
-
-success="${good}success!${reset}\n"
-
-intro() {
-    printf "${title}Welcome to setup of "; head -n1 /etc/os-release | sed "s/PRETTY_NAME=//"
-    printf "\n${reset}"
-    printf "  Kernel: "; uname -r
-    printf "  Machine name: "; uname -n
-    printf "  Processor type: "; uname -p
-    printf "\n"
-    read -p "  ${question}Continue(y/n)? ${answer}" start
-    if [ "$start" = "n" ] ; then
-        printf "\n${bad}Aborting.${reset}\n\n"
-        exit 0
-    fi
+# Utility functions
+colorscheme() {
+    reset="$(tput sgr0)$(tput setaf 253)" #grey
+    title="$(tput setaf 214)" #orange
+    question="$(tput setaf 45)" #darker cyan
+    answer="$(tput bold)$(tput setaf 255)" #white
+    success="$(tput setaf 2)" #green
+    failed="$(tput setaf 1)" #red
 }
 
-createUserName() {
-    printf "${title}Create User\n\n"
-    read -p "${question}  Username: ${answer}" name
+log_init() {
+    logfile=./install-debian-testing.log
+    [ "$logging" ] && log "INFO" "Starting install..." > $logfile
 }
 
-createUserPass() {
-    printf "${question}  Password: ${answer}"; stty -echo; read pass1; stty echo; printf "\n"
-    printf "${question}  Re-enter Password: ${answer}"; stty -echo; read pass2; stty echo; printf "${reset}\n"
+log() {
+    [ "$logging" ] && printf "$(date +"%T") $1 $2 $3\n" | sed 's/\s*$//' >> $logfile
+}
 
-    if ! [ "$pass1" = "$pass2" ]; then
-        printf "\n  ${bad}Passwords do not match. Try again:${reset}\n\n"
-        unset pass1 pass2
-        createUserPass
+say() { 
+    printf "$@"
+    logitem=$(printf "$@" | sed 's/\.\{3\}\s*$//')
+}
+
+yell() {
+    printf "${title}$@${reset}\n\n"
+}
+
+try() {
+    if logmessage=$(eval "$@" 2>&1) ; then
+        printf "${success}success${reset}\n"
+        log "INFO" "${logitem}...success"
     else
-        #clear
-        printf "\n\n"
-        printf "${good}User created successfully.${reset} "
+        printf "${logmessage} ${failed}...failed${reset}\n\n"
+        log "ERROR" "${logitem}" "${logmessage} ...failed\n"
     fi
 }
 
+# Intro
+welcome() {
+    yell "Welcome to setup of $(head -n1 /etc/os-release | sed 's/PRETTY_NAME=//')"
+    printf "  Kernel: $(uname -r)\n"
+    printf "  Machine name:  $(uname -n)\n"
+    printf "  Processor type: $(uname -p)\n\n"
+    read -p "  ${question}Continue(y/n)? ${answer}" yn
+    [ "$yn" = "n" ] && printf "\n${failed}Aborting.${reset}\n\n" && exit 1 || printf "${reset}\n"
+}
+
+inputUserName() {
+    yell 'Create User'
+    read -p "${question}  Username: ${answer}" username; printf "${reset}"
+}
+
+inputUserPass() {
+    printf "${question}  Password: "; stty -echo; read pass1; stty echo; printf "${reset}\n"
+    printf "${question}  Re-enter Password: "; stty -echo; read pass2; stty echo; printf "${reset}\n\n"
+    if ! [ "$pass1" = "$pass2" ]; then
+        printf "  ${failed}Passwords do not match. Try again:${reset}\n\n"
+        unset pass1 pass2
+        inputUserPass
+    fi
+}
+
+# Setup
 startSetup() {
-    printf "${title}Starting setup...${reset}\n\n"
+    yell 'Starting setup...'
 }
 
 addSources() {
-    printf "Adding sources to /etc/apt/sources.list..."
-
-    #printf "\
+    say "Adding sources..."
+    try printf "hello yall"
+    #echo "\
     #deb http://deb.debian.org/debian/ testing main
     #deb-src http://deb.debian.org/debian/ testing main
     #
@@ -71,23 +83,66 @@ addSources() {
     #deb http://deb.debian.org/debian-security testing-security main
     #deb-src http://deb.debian.org/debian-security testing-security main
     #" > /etc/apt/sources.list
-    printf $success
 
-    printf "updtating apt..."
-    #apt update
-    printf $success
+    say "Updating apt...\n"
+    try apt update
 }
 
+install_sudo() {
+    say "Installing sudo..."
+    try echo hello wold #sudo apt install sudo
+    #build-essential make apt-utils file curl wget git 
+}
+
+createUser() {
+    say "Creating user..."
+    ## 1st method: useradd - issue that password is exposed
+    #try 'useradd --create-home --user-group --shell /bin/bash "$username"'
+    #say "Changing password..."
+    #try 'echo "$username:$pass1" | chpasswd'
+    try echo "$username:$pass1"
+    ## 2nd method: adduser
+    ##adduser --disabled-password --shell /bin/bash --gecos "" username
+    #say "Unsetting password..."
+    #try unset pass1 pass2
+}
+
+addToSudoers() {
+    say "Adding user to sudoers..."
+    try echo hello world
+
+    #usermod -aG sudo "$username"
+    #su - username
+}
+
+install_apt() {
+    say "Installing Apt Packages..."
+}
+
+install_curl() { ;}
+
+install_git() { ;}
+
+install_homebrew() { ;}
+
+install_dotfiles() { ;}
+
 endSetup() {
-    printf "\ndone.\n"
+    yell "\n...done"
 }
 
 clear
-intro
-#clear
-printf "\n\n"
-createUserName
-createUserPass
+colorscheme
+log_init
+welcome
+inputUserName
+inputUserPass
 startSetup
 addSources
+install_sudo
+createUser
+addToSudoers
 endSetup
+
+
+# vim: fdm=indent fdls=1 fdn=1

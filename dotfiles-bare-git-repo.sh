@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+cd $HOME
+
 function dot {
    /usr/bin/git --git-dir=$HOME/.dotrepo/ --work-tree=$HOME $@
 }

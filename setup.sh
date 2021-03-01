@@ -35,11 +35,11 @@ verbose=
         tput sc
         printf "${reset}[       ] ${*}..."
         if eval_result=$(eval "$@" 2>&1) ; then
-            tput rc; tput cuf 1
+            stty -echo; tput rc; tput cuf 1; stty echo
             printf "${success}success${reset}\n" 
             [ "$verbose" ] && p "${eval_result}\n"
         else
-            tput rc; tput cuf 1
+            stty -echo; tput rc; tput cuf 1; stty echo
             printf "${failed}failed${reset}"
             printf "${stderr}${eval_result}\n"
             log "ERROR ${*} ${eval_result} ...failed\n"
@@ -73,8 +73,7 @@ verbose=
     }
 # }}}
 
-addSources() {
-    try printf "hello yall"
+#addSources() {
     #echo "\
     #deb http://deb.debian.org/debian/ testing main
     #deb-src http://deb.debian.org/debian/ testing main
@@ -85,30 +84,41 @@ addSources() {
     #deb http://deb.debian.org/debian-security testing-security main
     #deb-src http://deb.debian.org/debian-security testing-security main
     #" > /etc/apt/sources.list
+    #try apt update
+#}
 
-    try apt update
+fix_local() {
+    try apt purge locales
+    tru apt install locales -y
+    try echo 'en_US.UTF-8 UTF-8' > /etc/locale.gen
+    try dpkg-reconfigure --frontend=noninteractive locales
+    try update-locale LANG=en_US.UTF-8
 }
 
-install_sudo() {
-    try echo hello wold #sudo apt install sudo
-    #build-essential make apt-utils file curl wget git 
+install_basics() {
+    try umask 022
+    # curl already installed by wsl setup script
+    apt install -y readline-common sudo
+    apt install -y build-essential make apt-utils file wget git 
+
+}
+
+apt_update_upgrade() {
+    try apt update
+    try apt upgrade -y
 }
 
 createUser() {
-    ## 1st method: useradd - issue that password is exposed
-    #try 'useradd --create-home --user-group --shell /bin/bash "$username"'
-    #try 'echo "$username:$pass1" | chpasswd'
-    try echo "$username:$pass1"
-    ## 2nd method: adduser
-    ##adduser --disabled-password --shell /bin/bash --gecos "" username
+    # $username and $defaultShell env variables set by wsl setup script
+    try useradd --create-home --user-group --shell $defaultShell "$username"
+    #try echo "$username:$pass1" | chpasswd
     #try unset pass1 pass2
 }
 
 addToSudoers() {
-    try echo hello world\n
-
-    #usermod -aG sudo "$username"
-    #su - username
+    usermod -aG sudo "$username"
+    echo "$username  ALL=(ALL) NOPASSWD:ALL" | sudo tee /etc/sudoers.d/$username
+    #su - username <-don't need
 }
 
 #install_apt_pgks() {
@@ -143,18 +153,21 @@ main() {
     clear
     colorscheme
     log_init
-    welcome
-    inputUserName
-    inputUserPass
+    #welcome
+    #inputUserName
+    #inputUserPass
 
     h1 'Starting setup...'
-    addSources
-    install_sudo
+    #addSources
+    fix_local
+    install_basics
+    apt_update_upgrade
     createUser
     addToSudoers
 
-    h1 "\nInstalling Neovim..."
-    install_neovim
+    #h1 "\nInstalling Neovim..."
+    #install_neovim
+
     h1 "\n...done"
 }
 

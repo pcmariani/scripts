@@ -32,14 +32,15 @@ verbose=
     }
 
     try() { 
-        tput sc
-        printf "${reset}[       ] ${*}..."
+        #tput sc
+        #printf "${reset}[       ] ${*}..."
+        printf "${*} ..."
         if eval_result=$(eval "$@" 2>&1) ; then
-            stty -echo; tput rc; tput cuf 1; stty echo
-            printf "${success}success${reset}\n" 
+            #stty -echo; tput rc; tput cuf 1; stty echo
+            #printf "${success}success${reset}\n" 
             [ "$verbose" ] && p "${eval_result}\n"
         else
-            stty -echo; tput rc; tput cuf 1; stty echo
+            #stty -echo; tput rc; tput cuf 1; stty echo
             printf "${failed}failed${reset}"
             printf "${stderr}${eval_result}\n"
             log "ERROR ${*} ${eval_result} ...failed\n"
@@ -87,24 +88,23 @@ verbose=
     #try apt update
 #}
 
+install_basics() {
+    try umask 022
+    # curl already installed by wsl setup script
+    try apt install -y readline-common dialog apt-utils build-essential sudo make file wget git
+
+}
+
 fix_local() {
     try apt purge locales
-    tru apt install locales -y
+    try apt install locales -y
     try echo 'en_US.UTF-8 UTF-8' > /etc/locale.gen
     try dpkg-reconfigure --frontend=noninteractive locales
     try update-locale LANG=en_US.UTF-8
 }
 
-install_basics() {
-    try umask 022
-    # curl already installed by wsl setup script
-    apt install -y readline-common sudo
-    apt install -y build-essential make apt-utils file wget git 
-
-}
-
 apt_update_upgrade() {
-    try apt update
+    try apt update -y
     try apt upgrade -y
 }
 
@@ -116,8 +116,8 @@ createUser() {
 }
 
 addToSudoers() {
-    usermod -aG sudo "$username"
-    echo "$username  ALL=(ALL) NOPASSWD:ALL" | sudo tee /etc/sudoers.d/$username
+    try usermod -aG sudo "$username"
+    try echo "$username  ALL=(ALL) NOPASSWD:ALL" | sudo tee /etc/sudoers.d/$username
     #su - username <-don't need
 }
 

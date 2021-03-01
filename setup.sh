@@ -110,7 +110,7 @@ apt_update_upgrade() {
 
 createUser() {
     # $username and $defaultShell env variables set by wsl setup script
-    try useradd --create-home --user-group --shell $defaultShell "$username"
+    try useradd --create-home --user-group --shell /bin/$defaultShell "$username"
     #try echo "$username:$pass1" | chpasswd
     #try unset pass1 pass2
 }

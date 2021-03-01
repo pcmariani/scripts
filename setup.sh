@@ -89,35 +89,47 @@ verbose=
 #}
 
 install_basics() {
-    try umask 022
+    #try
+    umask 022
     # curl already installed by wsl setup script
-    try apt install -y readline-common dialog apt-utils build-essential sudo make file wget git
+    #try
+    apt install -y readline-common dialog apt-utils build-essential sudo make file wget git
 
 }
 
 fix_local() {
-    try apt purge locales
-    try apt install locales -y
-    try echo 'en_US.UTF-8 UTF-8' > /etc/locale.gen
-    try dpkg-reconfigure --frontend=noninteractive locales
-    try update-locale LANG=en_US.UTF-8
+    #try
+    apt purge locales
+    #try
+    apt install locales -y
+    #try
+    echo 'en_US.UTF-8 UTF-8' > /etc/locale.gen
+    #try
+    dpkg-reconfigure --frontend=noninteractive locales
+    #try
+    update-locale LANG=en_US.UTF-8
 }
 
 apt_update_upgrade() {
-    try apt update -y
-    try apt upgrade -y
+    #try
+    apt update -y
+    #try
+    apt upgrade -y
 }
 
 createUser() {
     # $username and $defaultShell env variables set by wsl setup script
-    try useradd --create-home --user-group --shell /bin/$defaultShell "$username"
+    #try
+    useradd --create-home --user-group --shell /bin/$defaultShell "$username"
     #try echo "$username:$pass1" | chpasswd
     #try unset pass1 pass2
 }
 
 addToSudoers() {
-    try usermod -aG sudo "$username"
-    try echo "$username  ALL=(ALL) NOPASSWD:ALL" | sudo tee /etc/sudoers.d/$username
+    #try
+    usermod -aG sudo "$username"
+    #try
+    echo "$username  ALL=(ALL) NOPASSWD:ALL" | sudo tee /etc/sudoers.d/$username
     #su - username <-don't need
 }
 
@@ -134,7 +146,8 @@ addToSudoers() {
 
 install_neovim() {
     local NVIM_HOME=$HOME/.local/appimages/nvim-nightly
-    try echo $NVIM_HOME
+    #try
+    echo $NVIM_HOME
     #try mkdir -p $NVIM_HOME
     #try cd $NVIM_HOME
     #try curl -LO https://github.com/neovim/neovim/releases/download/nightly/nvim.appimage 
@@ -150,14 +163,14 @@ install_neovim() {
 #}
 
 main() {
-    clear
-    colorscheme
-    log_init
+    #clear
+    #colorscheme
+    #log_init
     #welcome
     #inputUserName
     #inputUserPass
 
-    h1 'Starting setup...'
+    #h1 'Starting setup...'
     #addSources
     fix_local
     install_basics

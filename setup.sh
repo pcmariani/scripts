@@ -88,17 +88,20 @@ verbose=
     #apt update
     #}
 
-install_prereqs() {
-    umask 022
-    passwd
-    # curl already installed by wsl setup script
-    apt install -y readline-common dialog apt-utils build-essential \
-        sudo wget make cmake file git
 
+debian_prereqs() {
+    umask 022
+    echo "Set root password:"; passwd
+    for package in readline-common dialog apt-utils build-essential \
+        sudo wget make cmake file git ; do
+        echo "apt install $package..."
+        apt install -y "$package"
+    done
     }
 
 fix_locale() {
-    apt purge locales
+    echo "Fixing locale..."
+    apt purge locales -y
     apt install locales -y
     echo 'en_US.UTF-8 UTF-8' > /etc/locale.gen
     dpkg-reconfigure --frontend=noninteractive locales
@@ -107,20 +110,22 @@ fix_locale() {
 
 createUser() {
     # $username and $defaultShell env variables set by wsl setup script
+    echo "Creating user $username..."
     useradd --create-home --user-group --shell /bin/$defaultShell "$username"
     #echo "$username:$pass1" | chpasswd
     #unset pass1 pass2
+    echo "Adding $username to sudo group..."
     usermod -aG sudo "$username"
+    echo "Adding $username to sudoers..."
     echo "$username  ALL=(ALL) NOPASSWD:ALL" | sudo tee /etc/sudoers.d/$username
     USERHOME=/home/$username
-    DOTLOCALBIN=$USERHOME/.local/bin
-    DOTCONFIG=$USERHOME/.config
-    DOTLOCALAPPIMAGES=$USERHOME/.local/appiamges
-    mkdir -p $DOTLOCALBIN
-    mkdir -p $DOTCONFIG
+    USERCONFIG=$USERHOME/.config; mkdir -p $USERCONFIG
+    USERBIN=$USERHOME/.local/bin; mkdir -p $USERBIN
+    USERAPPIMAGES=$USERHOME/.local/appiamges; mkdir -p $USERAPPIMAGES
     }
 
 install_starship() {
+    echo "Installing Starship..."
     # or brew
     cd 
     sudo -u "$username" sudo \
@@ -128,46 +133,53 @@ install_starship() {
     }
 
 apt_update_upgrade() {
+    echo "apt update..."
     apt update -y
+    echo "apt upgrade..."
     apt upgrade -y
     }
 
 #install_todotxt() {
 #    TODO look at wsl Debian for correct paths. Will need symlink to Dropbox
-#    cd $DOTLOCALBIN
+#    cd $USERBIN
 #    wget -c https://github.com/todotxt/todo.txt-cli/archive/v2.12.0.tar.gz
 #    tar -xvf v2.12.0.tar.gz
 #    make
 #    make install \
-#        CONFIG_DIR=$DOTCONFIG \
-#        INSTALL_DIR=$DOTLOCALBIN \
+#        CONFIG_DIR=$USERCONFIG \
+#        INSTALL_DIR=$USERBIN \
 #        BASH_COMPLETION=/usr/share/bash-completion/completions
     #}
 
 install_q() {
+    echo "Installing q..."
     # or brew
-    cd $DOTLOCALBIN
+    cd $USERBIN
     wget -c https://github.com/harelba/q/releases/download/2.0.19/q-text-as-data_2.0.19-2_amd64.deb
     dpkg -i q-text-as-data_2.0.19-2_amd64.deb
     }
 
 install_linuxbrew() {
-    cd /home/$username
+    echo "Installing linuxbrew..."
+    cd $USERHOME
+    echo "Downloading and running Brew install script..."
     /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
     test -d ~/.linuxbrew && eval $(~/.linuxbrew/bin/brew shellenv)
     test -d /home/linuxbrew/.linuxbrew && eval $(/home/linuxbrew/.linuxbrew/bin/brew shellenv)
     test -r ~/.bash_profile && echo "eval \$($(brew --prefix)/bin/brew shellenv)" >>~/.bash_profile
     echo "eval \$($(brew --prefix)/bin/brew shellenv)" >>~/.profile
+    echo "brew install hello..."
     brew install hello
     }
 
 installwith_apt() {
-    echo "Apt: installing $1"
+    echo "apt install $1"
     sudo -u "$username" sudo apt install -y "$1"
     }
 
 installwith_brew() {
-    echo "Brew: installing $1 (not yet)"
+    echo "brew install $1"
+    sudo -u "$username" brew install "$1"
     }
 
 install_mainloop() {
@@ -175,21 +187,30 @@ install_mainloop() {
     curl -Ls "$progsfile" | sed '/^#/d' > /tmp/progs.csv
     while IFS=, read -r program method comment; do
         case "$method" in
-            "brew") installwith_brew "$program" "$comment" ;;
-            *) installwith_apt "$program" "$comment" ;;
+            "brew")
+                echo "Installing brew packages..."
+                installwith_brew "$program" "$comment"
+                ;;
+            *)
+                echo "Installing apt packages..."
+                installwith_apt "$program" "$comment" 
+                ;;
         esac
     done < /tmp/progs.csv
     }
 
 install_neovim() {
-    mkdir -p $DOTLOCALAPPIMAGES
-    cd $DOTLOCALAPPIMAGES
+    echo "Installing Neovim nightly..."
+    mkdir -p $USERAPPIMAGES
+    cd $USERAPPIMAGES
+    echo "Downloading nvim.appimage..."
     sudo -u $Username sudo \
         curl -LO https://github.com/neovim/neovim/releases/download/nightly/nvim.appimage 
+    echo "Extracting nvim.appimage..."
     ./nvim.appimage --appimage-extract
-    NVIMHOME=$DOTLOCALAPPIMAGES/nvim-nightly/squashfs-root/usr/bin/
+    NVIMHOME=$USERAPPIMAGES/nvim-nightly/squashfs-root/usr/bin/
     chmod u+x $NVIMHOME/nvim
-    cd $DOTLOCALBIN
+    cd $USERBIN
     ln -s $NVIMHOME/nvim nvim
     }
 
@@ -212,16 +233,14 @@ main() {
 
     #h1 'Starting setup...'
     #addSources
-    install_prereqs
+    debian_prereqs
     fix_locale
-    apt_update_upgrade
+    createUser
     install_starship
     apt_update_upgrade
-    createUser
     install_q
     install_mainloop
-    #h1 "\nInstalling Neovim..."
-    #install_neovim
+    install_neovim
 
     h1 "\n...done"
     }

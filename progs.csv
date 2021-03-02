@@ -1,5 +1,5 @@
 cmake
-upzip
+unzip
 tldr
 man
 jq

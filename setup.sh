@@ -202,7 +202,7 @@ install_neovim() {
     mkdir -p $USERAPPIMAGES
     cd $USERAPPIMAGES
     echo "--> Downloading nvim.appimage..."
-    sudo -u $Username sudo \
+    sudo -u $username sudo \
         curl -LO https://github.com/neovim/neovim/releases/download/nightly/nvim.appimage 
     echo "--> Extracting nvim.appimage..."
     ./nvim.appimage --appimage-extract

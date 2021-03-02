@@ -239,6 +239,7 @@ main() {
     install_starship
     apt_update_upgrade
     install_q
+    install_linuxbrew
     install_mainloop
     install_neovim
 

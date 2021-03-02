@@ -85,82 +85,122 @@ verbose=
     #deb http://deb.debian.org/debian-security testing-security main
     #deb-src http://deb.debian.org/debian-security testing-security main
     #" > /etc/apt/sources.list
-    #try apt update
-#}
+    #apt update
+    #}
 
-install_basics() {
-    #try
+install_prereqs() {
     umask 022
+    passwd
     # curl already installed by wsl setup script
-    #try
-    apt install -y readline-common dialog apt-utils build-essential sudo make file wget git
+    apt install -y readline-common dialog apt-utils build-essential \
+        sudo wget make cmake file git
 
-}
+    }
 
-fix_local() {
-    #try
+fix_locale() {
     apt purge locales
-    #try
     apt install locales -y
-    #try
     echo 'en_US.UTF-8 UTF-8' > /etc/locale.gen
-    #try
     dpkg-reconfigure --frontend=noninteractive locales
-    #try
     update-locale LANG=en_US.UTF-8
-}
-
-apt_update_upgrade() {
-    #try
-    apt update -y
-    #try
-    apt upgrade -y
-}
+    }
 
 createUser() {
     # $username and $defaultShell env variables set by wsl setup script
-    #try
     useradd --create-home --user-group --shell /bin/$defaultShell "$username"
-    #try echo "$username:$pass1" | chpasswd
-    #try unset pass1 pass2
-}
-
-addToSudoers() {
-    #try
+    #echo "$username:$pass1" | chpasswd
+    #unset pass1 pass2
     usermod -aG sudo "$username"
-    #try
     echo "$username  ALL=(ALL) NOPASSWD:ALL" | sudo tee /etc/sudoers.d/$username
-    #su - username <-don't need
-}
+    USERHOME=/home/$username
+    DOTLOCALBIN=$USERHOME/.local/bin
+    DOTCONFIG=$USERHOME/.config
+    DOTLOCALAPPIMAGES=$USERHOME/.local/appiamges
+    mkdir -p $DOTLOCALBIN
+    mkdir -p $DOTCONFIG
+    }
 
-#install_apt_pgks() {
-#}
-#
-#install_via_curl() { ;}
-#
-#install_via_git() { ;}
-#
-#install_homebrew_pkgs() { ;}
-#
-#install_dotfiles() { ;}
+install_starship() {
+    # or brew
+    cd 
+    sudo -u "$username" sudo \
+        curl -fsSL https://starship.rs/install.sh | bash
+    }
+
+apt_update_upgrade() {
+    apt update -y
+    apt upgrade -y
+    }
+
+#install_todotxt() {
+#    TODO look at wsl Debian for correct paths. Will need symlink to Dropbox
+#    cd $DOTLOCALBIN
+#    wget -c https://github.com/todotxt/todo.txt-cli/archive/v2.12.0.tar.gz
+#    tar -xvf v2.12.0.tar.gz
+#    make
+#    make install \
+#        CONFIG_DIR=$DOTCONFIG \
+#        INSTALL_DIR=$DOTLOCALBIN \
+#        BASH_COMPLETION=/usr/share/bash-completion/completions
+    #}
+
+install_q() {
+    # or brew
+    cd $DOTLOCALBIN
+    wget -c https://github.com/harelba/q/releases/download/2.0.19/q-text-as-data_2.0.19-2_amd64.deb
+    dpkg -i q-text-as-data_2.0.19-2_amd64.deb
+    }
+
+install_linuxbrew() {
+    cd /home/$username
+    /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+    test -d ~/.linuxbrew && eval $(~/.linuxbrew/bin/brew shellenv)
+    test -d /home/linuxbrew/.linuxbrew && eval $(/home/linuxbrew/.linuxbrew/bin/brew shellenv)
+    test -r ~/.bash_profile && echo "eval \$($(brew --prefix)/bin/brew shellenv)" >>~/.bash_profile
+    echo "eval \$($(brew --prefix)/bin/brew shellenv)" >>~/.profile
+    brew install hello
+    }
+
+installwith_apt() {
+    echo "Apt: installing $1"
+    sudo -u "$username" sudo apt install -y "$1"
+    }
+
+installwith_brew() {
+    echo "Brew: installing $1 (not yet)"
+    }
+
+install_mainloop() {
+    progsfile="https://raw.githubusercontent.com/pcmariani/scripts/main/progs.csv"
+    curl -Ls "$progsfile" | sed '/^#/d' > /tmp/progs.csv
+    while IFS=, read -r program method comment; do
+        case "$method" in
+            "brew") installwith_brew "$program" "$comment" ;;
+            *) installwith_apt "$program" "$comment" ;;
+        esac
+    done < /tmp/progs.csv
+    }
 
 install_neovim() {
-    local NVIM_HOME=$HOME/.local/appimages/nvim-nightly
-    #try
-    echo $NVIM_HOME
-    #try mkdir -p $NVIM_HOME
-    #try cd $NVIM_HOME
-    #try curl -LO https://github.com/neovim/neovim/releases/download/nightly/nvim.appimage 
-    #try chmod u+x nvim.appimage 
-    #try ./nvim.appimage --appimage-extract
-    #try ln -s ./squashfs-root/usr/bin/nvim nvim
-}
+    mkdir -p $DOTLOCALAPPIMAGES
+    cd $DOTLOCALAPPIMAGES
+    sudo -u $Username sudo \
+        curl -LO https://github.com/neovim/neovim/releases/download/nightly/nvim.appimage 
+    ./nvim.appimage --appimage-extract
+    NVIMHOME=$DOTLOCALAPPIMAGES/nvim-nightly/squashfs-root/usr/bin/
+    chmod u+x $NVIMHOME/nvim
+    cd $DOTLOCALBIN
+    ln -s $NVIMHOME/nvim nvim
+    }
 
 #neovim_vimplug() {
-    #try sh -c 'curl -fLo "${XDG_DATA_HOME:-$HOME/.local/share}"/nvim/site/autoload/plug.vim --create-dirs \
+    #sh -c 'curl -fLo "${XDG_DATA_HOME:-$HOME/.local/share}"/nvim/site/autoload/plug.vim --create-dirs \
     #   https://raw.githubusercontent.com/junegunn/vim-plug/master/plug.vim'
-    #try nvim --headless +PlugInstall +qall
-#}
+    #nvim --headless +PlugInstall +qall
+    #}
+
+#install_dotfiles() { ;}
+
 
 main() {
     #clear
@@ -172,17 +212,19 @@ main() {
 
     #h1 'Starting setup...'
     #addSources
-    fix_local
-    install_basics
+    install_prereqs
+    fix_locale
+    apt_update_upgrade
+    install_starship
     apt_update_upgrade
     createUser
-    addToSudoers
-
+    install_q
+    install_mainloop
     #h1 "\nInstalling Neovim..."
     #install_neovim
 
     h1 "\n...done"
-}
+    }
 
 main
 

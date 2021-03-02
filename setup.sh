@@ -1,6 +1,6 @@
 #!/bin/sh
 
-logging=true
+logging=
 verbose=
 
 # Script core {{{
@@ -75,7 +75,7 @@ verbose=
 # }}}
 
 #addSources() {
-    #echo "\
+    #echo " \
     #deb http://deb.debian.org/debian/ testing main
     #deb-src http://deb.debian.org/debian/ testing main
     #
@@ -94,13 +94,13 @@ debian_prereqs() {
     echo "Set root password:"; passwd
     for package in readline-common dialog apt-utils build-essential \
         sudo wget make cmake file git ; do
-        echo "apt install $package..."
+        echo "--> apt install $package..."
         apt install -y "$package"
     done
     }
 
 fix_locale() {
-    echo "Fixing locale..."
+    echo "--> Fixing locale..."
     apt purge locales -y
     apt install locales -y
     echo 'en_US.UTF-8 UTF-8' > /etc/locale.gen
@@ -110,13 +110,13 @@ fix_locale() {
 
 createUser() {
     # $username and $defaultShell env variables set by wsl setup script
-    echo "Creating user $username..."
+    echo "--> Creating user $username..."
     useradd --create-home --user-group --shell /bin/$defaultShell "$username"
     #echo "$username:$pass1" | chpasswd
     #unset pass1 pass2
-    echo "Adding $username to sudo group..."
+    echo "--> Adding $username to sudo group..."
     usermod -aG sudo "$username"
-    echo "Adding $username to sudoers..."
+    echo "--> Adding $username to sudoers..."
     echo "$username  ALL=(ALL) NOPASSWD:ALL" | sudo tee /etc/sudoers.d/$username
     USERHOME=/home/$username
     USERCONFIG=$USERHOME/.config; mkdir -p $USERCONFIG
@@ -125,7 +125,7 @@ createUser() {
     }
 
 install_starship() {
-    echo "Installing Starship..."
+    echo "--> Installing Starship..."
     # or brew
     cd 
     sudo -u "$username" sudo \
@@ -133,9 +133,9 @@ install_starship() {
     }
 
 apt_update_upgrade() {
-    echo "apt update..."
+    echo "--> apt update..."
     apt update -y
-    echo "apt upgrade..."
+    echo "--> apt upgrade..."
     apt upgrade -y
     }
 
@@ -152,7 +152,7 @@ apt_update_upgrade() {
     #}
 
 install_q() {
-    echo "Installing q..."
+    echo "--> Installing q..."
     # or brew
     cd $USERBIN
     wget -c https://github.com/harelba/q/releases/download/2.0.19/q-text-as-data_2.0.19-2_amd64.deb
@@ -160,25 +160,25 @@ install_q() {
     }
 
 install_linuxbrew() {
-    echo "Installing linuxbrew..."
+    echo "--> Installing linuxbrew..."
     cd $USERHOME
-    echo "Downloading and running Brew install script..."
+    echo "--> Downloading and running Brew install script..."
     /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
     test -d ~/.linuxbrew && eval $(~/.linuxbrew/bin/brew shellenv)
     test -d /home/linuxbrew/.linuxbrew && eval $(/home/linuxbrew/.linuxbrew/bin/brew shellenv)
     test -r ~/.bash_profile && echo "eval \$($(brew --prefix)/bin/brew shellenv)" >>~/.bash_profile
     echo "eval \$($(brew --prefix)/bin/brew shellenv)" >>~/.profile
-    echo "brew install hello..."
+    echo "--> brew install hello..."
     brew install hello
     }
 
 installwith_apt() {
-    echo "apt install $1"
+    echo "--> apt install $1"
     sudo -u "$username" sudo apt install -y "$1"
     }
 
 installwith_brew() {
-    echo "brew install $1"
+    echo "--> brew install $1"
     sudo -u "$username" brew install "$1"
     }
 
@@ -188,11 +188,9 @@ install_mainloop() {
     while IFS=, read -r program method comment; do
         case "$method" in
             "brew")
-                echo "Installing brew packages..."
                 installwith_brew "$program" "$comment"
                 ;;
             *)
-                echo "Installing apt packages..."
                 installwith_apt "$program" "$comment" 
                 ;;
         esac
@@ -200,13 +198,13 @@ install_mainloop() {
     }
 
 install_neovim() {
-    echo "Installing Neovim nightly..."
+    echo "--> Installing Neovim nightly..."
     mkdir -p $USERAPPIMAGES
     cd $USERAPPIMAGES
-    echo "Downloading nvim.appimage..."
+    echo "--> Downloading nvim.appimage..."
     sudo -u $Username sudo \
         curl -LO https://github.com/neovim/neovim/releases/download/nightly/nvim.appimage 
-    echo "Extracting nvim.appimage..."
+    echo "--> Extracting nvim.appimage..."
     ./nvim.appimage --appimage-extract
     NVIMHOME=$USERAPPIMAGES/nvim-nightly/squashfs-root/usr/bin/
     chmod u+x $NVIMHOME/nvim

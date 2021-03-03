@@ -2,10 +2,9 @@
 
 #   <~-- - -~<o>~- - --~>
 #
-#   Debian WSL setup
+#   Debian WSL Setup
 #
 #   <~-- - -~<o>~- - --~>
-
 
 eecho() {
     echo "${green}$@${reset}"
@@ -151,126 +150,5 @@ main() {
 main
 
 #   <~-- - -~<o>~- - --~>   #
-
-
-#clear
-#log_init
-#welcome
-#inputUserName
-#inputUserPass
-#h1 'Starting setup...'
-#addSources
-
-#reset="$(tput sgr0)$(tput setaf 253)" #grey
-#green="$(tput setaf 214)" #orange
-#question="$(tput setaf 81)" #darker cyan
-#answer="$(tput bold)$(tput setaf 255)" #white
-#success="$(tput setaf 2)" #green
-#failed="$(tput setaf 1)" #red
-#stderr="$(tput setaf 175)" #white
-
-## Script core {{{
-#log_init() {
-#    logfile=./install-debian-testing.log
-#    [ "$logging" ] && log "INFO Starting install..." > $logfile
-#}
-#
-#log() {
-#    [ "$logging" ] && printf "$(date +"%T") $@\n" >> $logfile
-#}
-#
-#h1() {
-#    printf "${green}$@${reset}\n\n${reset}"
-#}
-#
-#p() {
-#    printf "${reset}$@\n"
-#}
-#
-#try() { 
-#    #tput sc
-#    #printf "${reset}[       ] ${*}..."
-#    printf "${*} ..."
-#    if eval_result=$(eval "$@" 2>&1) ; then
-#        #stty -echo; tput rc; tput cuf 1; stty echo
-#        #printf "${success}success${reset}\n" 
-#        [ "$verbose" ] && p "${eval_result}\n"
-#    else
-#        #stty -echo; tput rc; tput cuf 1; stty echo
-#        printf "${failed}failed${reset}"
-#        printf "${stderr}${eval_result}\n"
-#        log "ERROR ${*} ${eval_result} ...failed\n"
-#    fi
-#}
-## }}}
-#
-## Intro {{{
-#welcome() {
-#    h1 "Welcome to setup of $(head -n1 /etc/os-release | sed 's/PRETTY_NAME=//')"
-#    p "  Kernel: $(uname -r)"
-#    p "  Machine name:  $(uname -n)"
-#    p "  Processor type: $(uname -p)\n"
-#    read -p "  ${question}Continue(y/n)? ${answer}" yn
-#    [ "$yn" = "n" ] && printf "\n${failed}Aborting.${reset}\n\n" && exit 1 || p
-#}
-#
-#inputUserName() {
-#    h1 'Create User'
-#    read -p "${question}  Username: ${answer}" username; printf "${reset}"
-#}
-#
-#inputUserPass() {
-#    printf "${question}  Password: "; stty -echo; read pass1; stty echo; p
-#    printf "${question}  Re-enter Password: "; stty -echo; read pass2; stty echo; p "\n"
-#    if ! [ "$pass1" = "$pass2" ]; then
-#        printf "  ${failed}Passwords do not match. Try again:${reset}\n\n"
-#        unset pass1 pass2
-#        inputUserPass
-#    fi
-#}
-## }}}
-
-#addSources() {
-    #echo " \
-    #deb http://deb.debian.org/debian/ testing main
-    #deb-src http://deb.debian.org/debian/ testing main
-    #
-    #deb http://deb.debian.org/debian/ testing-updates main
-    #deb-src http://deb.debian.org/debian/ testing-updates main
-    #
-    #deb http://deb.debian.org/debian-security testing-security main
-    #deb-src http://deb.debian.org/debian-security testing-security main
-    #" > /etc/apt/sources.list
-    #apt update
-    #}
-
-#install_starship() {
-#    eecho "Installing Starship..."
-#    # or brew
-#    sudo -u "$username" sudo \
-#        curl -fsSL https://starship.rs/install.sh | bash
-#    }
-#
-#install_q() {
-#    eecho "Installing q..."
-#    # or brew
-#    pushd $USERBIN
-#    wget -c https://github.com/harelba/q/releases/download/2.0.19/q-text-as-data_2.0.19-2_amd64.deb
-#    dpkg -i q-text-as-data_2.0.19-2_amd64.deb
-#    popd
-#}
-
-#install_todotxt() {
-#    TODO look at wsl Debian for correct paths. Will need symlink to Dropbox
-#    cd $USERBIN
-#    wget -c https://github.com/todotxt/todo.txt-cli/archive/v2.12.0.tar.gz
-#    tar -xvf v2.12.0.tar.gz
-#    make
-#    make install \
-#        CONFIG_DIR=$USERCONFIG \
-#        INSTALL_DIR=$USERBIN \
-#        BASH_COMPLETION=/usr/share/bash-completion/completions
-#}
-
 
 # vim: fdm=indent fdls=1 fdn=1

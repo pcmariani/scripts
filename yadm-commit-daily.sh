@@ -22,8 +22,8 @@ join() {
 	local IFS="|"
 	echo "$*"
 }
-res="autocommit > $(join "${messageArr[@]}" | sed "s/\|/ : /g")"
-echo "$res"
+message="autocommit > $(join "${messageArr[@]}" | sed "s/\|/ : /g")"
+# echo "$message"
 
 yadm add -u
 yadm commit -m "$message"
